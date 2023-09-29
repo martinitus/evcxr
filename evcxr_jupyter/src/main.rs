@@ -25,6 +25,7 @@ mod jupyter_message;
 
 fn run(control_file_name: &str) -> Result<()> {
     let config = control_file::Control::parse_file(control_file_name)?;
+    log4rs::init_file("./log4rs.yml", Default::default()).unwrap();
     core::Server::run(&config)
 }
 

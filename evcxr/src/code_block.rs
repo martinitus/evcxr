@@ -323,9 +323,33 @@ impl CodeBlock {
 
     pub(crate) fn code_string(&self) -> String {
         let mut output = String::new();
+
+        let init_logger = r#"
+            use log::{LevelFilter, Log, SetLoggerError};
+
+            pub type SetupLogger = extern "Rust" fn(
+                logger: &'static dyn Log,
+                level: LevelFilter,
+            ) -> Result<(), SetLoggerError>;
+
+            #[no_mangle]
+            pub extern "Rust" fn setup_logger(
+                logger: &'static dyn Log,
+                level: LevelFilter,
+            ) -> Result<(), SetLoggerError> {
+                println!("child logger: {:?}",  log::logger() as *const dyn Log);
+                println!("child received: {:?}",  logger as *const dyn Log);
+                log::set_max_level(level);
+                log::set_logger(logger)
+            }
+        "#;
+
+        output.push_str(init_logger);
+
         for segment in &self.segments {
             output.push_str(&segment.code);
         }
+
         output
     }
 

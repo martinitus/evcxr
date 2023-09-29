@@ -1439,7 +1439,7 @@ impl ContextState {
         compilation_mode: CompilationMode,
     ) -> CodeBlock {
         let mut code = CodeBlock::new()
-            .generated("#![allow(unused_imports, unused_mut, dead_code)]")
+            // .generated("#![allow(unused_imports, unused_mut, dead_code)]")
             .add_all(self.attributes_code())
             .add_all(self.items_code());
         let has_user_code = !user_code.is_empty();

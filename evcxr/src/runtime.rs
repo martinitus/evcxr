@@ -13,6 +13,12 @@ use std::io;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::{self};
+use log::{LevelFilter, Log, SetLoggerError};
+
+pub type SetupLogger = extern "Rust" fn(
+    logger: &'static dyn Log,
+    level: LevelFilter,
+) -> Result<(), SetLoggerError>;
 
 pub(crate) const EVCXR_IS_RUNTIME_VAR: &str = "EVCXR_IS_RUNTIME";
 pub(crate) const EVCXR_EXECUTION_COMPLETE: &str = "EVCXR_EXECUTION_COMPLETE";
@@ -33,6 +39,7 @@ pub fn runtime_hook() {
 struct Runtime {
     shared_objects: Vec<libloading::Library>,
     variable_store_ptr: *mut std::os::raw::c_void,
+    logger_initialized: bool,
     // Our variable store is permitted to contain non-Send types (e.g. Rc), therefore we need to be
     // non-Send as well.
     _phantom_rc: PhantomData<Rc<()>>,
@@ -43,6 +50,7 @@ impl Runtime {
         Runtime {
             shared_objects: Vec::new(),
             variable_store_ptr: std::ptr::null_mut(),
+            logger_initialized: false,
             _phantom_rc: PhantomData,
         }
     }
@@ -76,6 +84,13 @@ impl Runtime {
     fn load_and_run(&mut self, so_path: &str, fn_name: &str) -> Result<(), Error> {
         use std::os::raw::c_void;
         let shared_object = unsafe { libloading::Library::new(so_path) }?;
+        if !self.logger_initialized {
+            let x: &'static dyn Log = log::logger();
+            println!("local logger: {:?}",  x as *const dyn Log);
+            let setup_logger = unsafe { shared_object.get::<SetupLogger>(b"setup_logger") }.unwrap();
+            setup_logger(x, log::max_level()).unwrap();
+            self.logger_initialized = true;
+        }
         unsafe {
             let user_fn = shared_object
                 .get::<extern "C" fn(*mut c_void) -> *mut c_void>(fn_name.as_bytes())?;

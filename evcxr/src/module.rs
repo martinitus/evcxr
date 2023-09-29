@@ -283,6 +283,7 @@ incremental = true
 overflow-checks = true
 
 [dependencies]
+log = "0.4.20"
 {}
 "#,
             CRATE_NAME,

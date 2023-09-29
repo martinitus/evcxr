@@ -246,6 +246,7 @@ Panic detected. Here's some useful information if you're filing a bug report.
                 outputs.merge(self.execute(&prelude)?);
             }
         }
+        // log4rs::init_file("./log4rs.yml", Default::default()).unwrap();
         Ok(outputs)
     }
 
